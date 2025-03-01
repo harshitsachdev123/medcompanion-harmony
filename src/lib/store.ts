@@ -241,5 +241,3 @@ export const useStore = create<MedicationStore>()(
     }
   )
 );
-
-<lov-add-dependency>zustand@4.5.0</lov-add-dependency>
