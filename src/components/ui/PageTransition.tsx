@@ -43,5 +43,3 @@ const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
 };
 
 export default PageTransition;
-
-<lov-add-dependency>framer-motion@11.1.8</lov-add-dependency>
