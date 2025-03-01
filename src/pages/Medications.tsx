@@ -1,27 +1,25 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Clock, PlusCircle } from 'lucide-react';
+import { Plus, Search, Filter, Pill } from 'lucide-react';
 import PageTransition from '@/components/ui/PageTransition';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import MedicationReminders from '@/components/medication/MedicationReminders';
-import MedicationLog from '@/components/medication/MedicationLog';
 import MedicationCard from '@/components/medication/MedicationCard';
 import AddMedicationForm from '@/components/medication/AddMedicationForm';
 import { Button } from '@/components/ui/button';
-import { Dialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { useStore } from '@/lib/store';
 import { Medication } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 
-const Index = () => {
+const Medications = () => {
+  const [search, setSearch] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [medicationToEdit, setMedicationToEdit] = useState<Medication | undefined>(undefined);
   
   const { 
     medications, 
-    reminders, 
     addMedication, 
     updateMedication,
     deleteMedication 
@@ -74,8 +72,12 @@ const Index = () => {
     setMedicationToEdit(undefined);
   };
   
-  // Get reminders for today that aren't taken or skipped
-  const upcomingReminders = reminders.filter(reminder => !reminder.taken && !reminder.skipped);
+  // Filter medications by search term
+  const filteredMedications = medications.filter(med => 
+    med.name.toLowerCase().includes(search.toLowerCase()) ||
+    med.prescriber?.toLowerCase().includes(search.toLowerCase()) ||
+    med.pharmacy?.toLowerCase().includes(search.toLowerCase())
+  );
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-med-blue-50 to-white">
@@ -83,57 +85,49 @@ const Index = () => {
       
       <PageTransition>
         <main className="flex-grow page-container">
-          <section className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-bold text-med-gray-900">MedCompanion</h1>
+          <section>
+            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+              <h1 className="text-3xl font-bold text-med-gray-900">All Medications</h1>
               
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-med-gray-500" size={18} />
+                  <Input
+                    placeholder="Search medications..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                  />
+                </div>
+                
                 <Button onClick={handleOpenForm} className="flex items-center gap-2">
                   <Plus size={16} />
                   <span>Add Medication</span>
                 </Button>
-              </motion.div>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <MedicationReminders reminders={upcomingReminders} />
-              </div>
-              
-              <div className="lg:col-span-1">
-                <MedicationLog reminders={reminders} />
-              </div>
-            </div>
-          </section>
-          
-          <section className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center">
-                <Clock size={24} className="text-med-blue-600 mr-2" />
-                <h2 className="text-2xl font-semibold text-med-gray-800">Your Medications</h2>
-              </div>
-              
-              <Button variant="ghost" onClick={handleOpenForm} className="text-med-blue-600 hover:text-med-blue-700 hover:bg-med-blue-50">
-                <PlusCircle size={18} className="mr-1" />
-                Add New
-              </Button>
-            </div>
-            
-            {medications.length === 0 ? (
+            {filteredMedications.length === 0 ? (
               <div className="bg-white/70 backdrop-blur-sm rounded-xl p-8 text-center shadow-glass border border-white/20">
-                <h3 className="text-xl font-medium text-med-gray-800 mb-2">No medications added yet</h3>
-                <p className="text-med-gray-600 mb-4">Add your first medication to get started.</p>
+                {search ? (
+                  <>
+                    <h3 className="text-xl font-medium text-med-gray-800 mb-2">No results found</h3>
+                    <p className="text-med-gray-600 mb-4">Try a different search term or add a new medication.</p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-medium text-med-gray-800 mb-2">No medications added yet</h3>
+                    <p className="text-med-gray-600 mb-4">Add your first medication to get started.</p>
+                  </>
+                )}
                 <Button onClick={handleOpenForm} className="mt-2">
                   <Plus size={16} className="mr-1" />
-                  Add Your First Medication
+                  Add New Medication
                 </Button>
               </div>
             ) : (
               <div className="grid-cards">
-                {medications.map(medication => (
+                {filteredMedications.map(medication => (
                   <MedicationCard 
                     key={medication.id} 
                     medication={medication} 
@@ -159,4 +153,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Medications;
