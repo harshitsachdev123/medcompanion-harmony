@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Medication, Reminder, Caregiver, User } from '@/types';
@@ -113,6 +112,7 @@ const sampleUser: User = {
   email: 'alex@example.com',
   phone: '555-123-4567',
   preferredPharmacy: 'MedPlus Pharmacy',
+  isLoggedIn: false,
   caregivers: [
     {
       id: 'caregiver-1',
@@ -147,6 +147,7 @@ interface MedicationStore {
   
   // User actions
   updateUser: (user: Partial<User>) => void;
+  logout: () => void;
 }
 
 export const useStore = create<MedicationStore>()(
@@ -233,6 +234,14 @@ export const useStore = create<MedicationStore>()(
           user: {
             ...state.user,
             ...userData,
+          },
+        })),
+        
+      logout: () => 
+        set((state) => ({
+          user: {
+            ...state.user,
+            isLoggedIn: false,
           },
         })),
     }),

@@ -45,5 +45,6 @@ export interface User {
   email: string;
   phone?: string;
   preferredPharmacy?: string;
+  isLoggedIn?: boolean;
   caregivers: Caregiver[];
 }

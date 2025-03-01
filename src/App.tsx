@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import Medications from "./pages/Medications";
 import Reminders from "./pages/Reminders";
 import CaregiverSettings from "./pages/CaregiverSettings";
+import Login from "./pages/Login";
+import Chatbot from "./pages/Chatbot";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
             <Route path="/medications" element={<Medications />} />
             <Route path="/reminders" element={<Reminders />} />
             <Route path="/caregiver" element={<CaregiverSettings />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/chat" element={<Chatbot />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AnimatePresence>
