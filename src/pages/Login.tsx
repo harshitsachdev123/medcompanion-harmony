@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import PageTransition from '@/components/ui/PageTransition';
 import { useStore } from '@/lib/store';
@@ -12,35 +13,60 @@ import { useStore } from '@/lib/store';
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  // Login state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const updateUser = useStore(state => state.updateUser);
-  const user = useStore(state => state.user);
+  // Signup state
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [preferredPharmacy, setPreferredPharmacy] = useState('');
+  
+  const { login, signup, isLoading, error } = useStore();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Simple login simulation - in a real app, you would authenticate with a backend
-    setTimeout(() => {
-      // For this demo, just use the sample user data
-      if (email === user.email || email === 'demo@example.com') {
-        updateUser({ isLoggedIn: true });
-        toast({
-          title: "Login successful",
-          description: "Welcome back to your medication dashboard!",
-        });
-        navigate('/');
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid credentials. Please try again.",
-          variant: "destructive"
-        });
-      }
-      setIsLoading(false);
-    }, 1000);
+    try {
+      await login(email, password);
+      toast({
+        title: "Login successful",
+        description: "Welcome back to your medication dashboard!",
+      });
+      navigate('/');
+    } catch (error) {
+      // Error is handled in the store
+      toast({
+        title: "Login failed",
+        description: "Invalid credentials. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await signup(signupEmail, signupPassword, {
+        name,
+        phone,
+        preferredPharmacy,
+      });
+      toast({
+        title: "Account created",
+        description: "Welcome to MedCompanion!",
+      });
+      navigate('/');
+    } catch (error) {
+      // Error is handled in the store
+      toast({
+        title: "Signup failed",
+        description: "Could not create account. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -48,51 +74,119 @@ const Login = () => {
       <div className="flex justify-center items-center min-h-screen bg-background p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Welcome</CardTitle>
             <CardDescription className="text-center">
-              Enter your email and password to access your medication dashboard
+              Sign in or create an account to manage your medications
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin}>
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <a href="#" className="text-sm text-primary underline-offset-4 hover:underline">
-                      Forgot password?
-                    </a>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <form onSubmit={handleLogin}>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="name@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        <a href="#" className="text-sm text-primary underline-offset-4 hover:underline">
+                          Forgot password?
+                        </a>
+                      </div>
+                      <Input 
+                        id="password" 
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button className="w-full" type="submit" disabled={isLoading}>
+                      {isLoading ? "Signing in..." : "Sign in"}
+                    </Button>
                   </div>
-                  <Input 
-                    id="password" 
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button className="w-full" type="submit" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </Button>
-              </div>
-            </form>
-            <div className="mt-4 text-center text-sm">
-              Don't have an account?{" "}
-              <a href="#" className="text-primary underline-offset-4 hover:underline">
-                Sign up
-              </a>
-            </div>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <form onSubmit={handleSignup}>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input 
+                        id="signup-email" 
+                        type="email" 
+                        placeholder="name@example.com"
+                        value={signupEmail}
+                        onChange={(e) => setSignupEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input 
+                        id="signup-password" 
+                        type="password"
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input 
+                        id="name" 
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="phone">Phone (Optional)</Label>
+                        <Input 
+                          id="phone" 
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="pharmacy">Preferred Pharmacy (Optional)</Label>
+                        <Input 
+                          id="pharmacy" 
+                          type="text"
+                          value={preferredPharmacy}
+                          onChange={(e) => setPreferredPharmacy(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <Button className="w-full" type="submit" disabled={isLoading}>
+                      {isLoading ? "Creating Account..." : "Create Account"}
+                    </Button>
+                  </div>
+                </form>
+              </TabsContent>
+            </Tabs>
+            
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">{error}</div>
+            )}
           </CardContent>
           <CardFooter>
             <Button 

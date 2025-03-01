@@ -2,11 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Medication, Reminder, Caregiver, User } from '@/types';
 import { format } from 'date-fns';
+import { medicationAPI, reminderAPI, userAPI } from './supabase';
 
 // Generate a unique ID
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
-// Sample medications for demonstration
+// Sample medications for demonstration - will be removed when database is connected
 const sampleMedications: Medication[] = [
   {
     id: 'med-1',
@@ -47,7 +48,7 @@ const sampleMedications: Medication[] = [
   }
 ];
 
-// Generate sample reminders based on medications
+// Generate sample reminders based on medications - will be removed when database is connected
 const generateSampleReminders = (medications: Medication[]): Reminder[] => {
   const reminders: Reminder[] = [];
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -105,7 +106,7 @@ const generateSampleReminders = (medications: Medication[]): Reminder[] => {
   return reminders;
 };
 
-// Sample user for demonstration
+// Sample user for demonstration - will be removed when database is connected
 const sampleUser: User = {
   id: 'user-1',
   name: 'Alex Johnson',
@@ -130,120 +131,386 @@ interface MedicationStore {
   medications: Medication[];
   reminders: Reminder[];
   user: User;
+  isLoading: boolean;
+  error: string | null;
+  
+  // Data loading
+  loadInitialData: () => Promise<void>;
   
   // Medication actions
-  addMedication: (medication: Omit<Medication, 'id'>) => void;
-  updateMedication: (id: string, medication: Partial<Medication>) => void;
-  deleteMedication: (id: string) => void;
+  addMedication: (medication: Omit<Medication, 'id'>) => Promise<void>;
+  updateMedication: (id: string, medication: Partial<Medication>) => Promise<void>;
+  deleteMedication: (id: string) => Promise<void>;
   
   // Reminder actions
-  markReminderAsTaken: (id: string) => void;
-  markReminderAsSkipped: (id: string) => void;
+  markReminderAsTaken: (id: string) => Promise<void>;
+  markReminderAsSkipped: (id: string) => Promise<void>;
   
   // Caregiver actions
-  addCaregiver: (caregiver: Omit<Caregiver, 'id'>) => void;
-  updateCaregiver: (id: string, caregiver: Partial<Caregiver>) => void;
-  deleteCaregiver: (id: string) => void;
+  addCaregiver: (caregiver: Omit<Caregiver, 'id'>) => Promise<void>;
+  updateCaregiver: (id: string, caregiver: Partial<Caregiver>) => Promise<void>;
+  deleteCaregiver: (id: string) => Promise<void>;
   
   // User actions
-  updateUser: (user: Partial<User>) => void;
-  logout: () => void;
+  updateUser: (user: Partial<User>) => Promise<void>;
+  
+  // Auth actions
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, userData: Omit<User, 'id' | 'isLoggedIn' | 'caregivers'>) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export const useStore = create<MedicationStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       medications: sampleMedications,
       reminders: generateSampleReminders(sampleMedications),
       user: sampleUser,
+      isLoading: false,
+      error: null,
+      
+      // Data loading
+      loadInitialData: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          // Try to get current user
+          const user = await userAPI.getCurrentUser();
+          
+          if (user) {
+            // User is logged in, load their data
+            const medications = await medicationAPI.getAll();
+            const reminders = await reminderAPI.getAll();
+            
+            set({ 
+              medications, 
+              reminders, 
+              user: { ...user, isLoggedIn: true }, 
+              isLoading: false 
+            });
+          } else {
+            // Use demo data if not logged in
+            set({ 
+              medications: sampleMedications, 
+              reminders: generateSampleReminders(sampleMedications), 
+              user: { ...sampleUser, isLoggedIn: false },
+              isLoading: false 
+            });
+          }
+        } catch (error) {
+          console.error("Failed to load initial data:", error);
+          set({ 
+            error: "Failed to load data. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
       
       // Medication actions
-      addMedication: (medication) => 
-        set((state) => {
-          const newMedication = { 
-            ...medication, 
-            id: `med-${generateId()}` 
-          };
-          return { medications: [...state.medications, newMedication] };
-        }),
-        
-      updateMedication: (id, medication) =>
-        set((state) => ({
-          medications: state.medications.map((med) =>
-            med.id === id ? { ...med, ...medication } : med
-          ),
-        })),
-        
-      deleteMedication: (id) =>
-        set((state) => ({
-          medications: state.medications.filter((med) => med.id !== id),
-          reminders: state.reminders.filter((reminder) => reminder.medicationId !== id),
-        })),
+      addMedication: async (medication) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Add to database if logged in
+            const newMedication = await medicationAPI.add(medication);
+            set((state) => ({ 
+              medications: [...state.medications, newMedication],
+              isLoading: false
+            }));
+          } else {
+            // Use local storage if not logged in
+            const newMedication = { 
+              ...medication, 
+              id: `med-${generateId()}` 
+            };
+            set((state) => ({ 
+              medications: [...state.medications, newMedication],
+              isLoading: false
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to add medication:", error);
+          set({ 
+            error: "Failed to add medication. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      updateMedication: async (id, medication) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Update in database if logged in
+            await medicationAPI.update(id, medication);
+          }
+          
+          // Update in local state
+          set((state) => ({
+            medications: state.medications.map((med) =>
+              med.id === id ? { ...med, ...medication } : med
+            ),
+            isLoading: false
+          }));
+        } catch (error) {
+          console.error("Failed to update medication:", error);
+          set({ 
+            error: "Failed to update medication. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      deleteMedication: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Delete from database if logged in
+            await medicationAPI.delete(id);
+          }
+          
+          // Delete from local state
+          set((state) => ({
+            medications: state.medications.filter((med) => med.id !== id),
+            reminders: state.reminders.filter((reminder) => reminder.medicationId !== id),
+            isLoading: false
+          }));
+        } catch (error) {
+          console.error("Failed to delete medication:", error);
+          set({ 
+            error: "Failed to delete medication. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
       
       // Reminder actions
-      markReminderAsTaken: (id) =>
-        set((state) => ({
-          reminders: state.reminders.map((reminder) =>
-            reminder.id === id ? { ...reminder, taken: true, skipped: false } : reminder
-          ),
-        })),
-        
-      markReminderAsSkipped: (id) =>
-        set((state) => ({
-          reminders: state.reminders.map((reminder) =>
-            reminder.id === id ? { ...reminder, taken: false, skipped: true } : reminder
-          ),
-        })),
+      markReminderAsTaken: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Update in database if logged in
+            await reminderAPI.markAsTaken(id);
+          }
+          
+          // Update in local state
+          set((state) => ({
+            reminders: state.reminders.map((reminder) =>
+              reminder.id === id ? { ...reminder, taken: true, skipped: false } : reminder
+            ),
+            isLoading: false
+          }));
+        } catch (error) {
+          console.error("Failed to mark reminder as taken:", error);
+          set({ 
+            error: "Failed to update reminder. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      markReminderAsSkipped: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Update in database if logged in
+            await reminderAPI.markAsSkipped(id);
+          }
+          
+          // Update in local state
+          set((state) => ({
+            reminders: state.reminders.map((reminder) =>
+              reminder.id === id ? { ...reminder, taken: false, skipped: true } : reminder
+            ),
+            isLoading: false
+          }));
+        } catch (error) {
+          console.error("Failed to mark reminder as skipped:", error);
+          set({ 
+            error: "Failed to update reminder. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
       
       // Caregiver actions
-      addCaregiver: (caregiver) =>
-        set((state) => {
-          const newCaregiver = { 
-            ...caregiver, 
-            id: `caregiver-${generateId()}` 
-          };
-          return { 
-            user: { 
-              ...state.user, 
-              caregivers: [...state.user.caregivers, newCaregiver] 
-            } 
-          };
-        }),
-        
-      updateCaregiver: (id, caregiver) =>
-        set((state) => ({
-          user: {
-            ...state.user,
-            caregivers: state.user.caregivers.map((c) =>
-              c.id === id ? { ...c, ...caregiver } : c
-            ),
-          },
-        })),
-        
-      deleteCaregiver: (id) =>
-        set((state) => ({
-          user: {
-            ...state.user,
-            caregivers: state.user.caregivers.filter((c) => c.id !== id),
-          },
-        })),
+      addCaregiver: async (caregiver) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Add to database if logged in
+            const newCaregiver = await userAPI.addCaregiver(caregiver);
+            set((state) => ({ 
+              user: { 
+                ...state.user, 
+                caregivers: [...state.user.caregivers, newCaregiver] 
+              },
+              isLoading: false
+            }));
+          } else {
+            // Use local storage if not logged in
+            const newCaregiver = { 
+              ...caregiver, 
+              id: `caregiver-${generateId()}` 
+            };
+            set((state) => ({ 
+              user: { 
+                ...state.user, 
+                caregivers: [...state.user.caregivers, newCaregiver] 
+              },
+              isLoading: false
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to add caregiver:", error);
+          set({ 
+            error: "Failed to add caregiver. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      updateCaregiver: async (id, caregiver) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Update in database if logged in
+            await userAPI.updateCaregiver(id, caregiver);
+          }
+          
+          // Update in local state
+          set((state) => ({
+            user: {
+              ...state.user,
+              caregivers: state.user.caregivers.map((c) =>
+                c.id === id ? { ...c, ...caregiver } : c
+              ),
+            },
+            isLoading: false
+          }));
+        } catch (error) {
+          console.error("Failed to update caregiver:", error);
+          set({ 
+            error: "Failed to update caregiver. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      deleteCaregiver: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Delete from database if logged in
+            await userAPI.deleteCaregiver(id);
+          }
+          
+          // Delete from local state
+          set((state) => ({
+            user: {
+              ...state.user,
+              caregivers: state.user.caregivers.filter((c) => c.id !== id),
+            },
+            isLoading: false
+          }));
+        } catch (error) {
+          console.error("Failed to delete caregiver:", error);
+          set({ 
+            error: "Failed to delete caregiver. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
       
       // User actions
-      updateUser: (userData) =>
-        set((state) => ({
-          user: {
-            ...state.user,
-            ...userData,
-          },
-        })),
-        
-      logout: () => 
-        set((state) => ({
-          user: {
-            ...state.user,
-            isLoggedIn: false,
-          },
-        })),
+      updateUser: async (userData) => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            // Update in database if logged in
+            await userAPI.updateUser(userData);
+          }
+          
+          // Update in local state
+          set((state) => ({
+            user: {
+              ...state.user,
+              ...userData,
+            },
+            isLoading: false
+          }));
+        } catch (error) {
+          console.error("Failed to update user:", error);
+          set({ 
+            error: "Failed to update user. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      // Auth actions
+      login: async (email, password) => {
+        set({ isLoading: true, error: null });
+        try {
+          await userAPI.login(email, password);
+          
+          // Load user data after login
+          const user = await userAPI.getCurrentUser();
+          const medications = await medicationAPI.getAll();
+          const reminders = await reminderAPI.getAll();
+          
+          set({ 
+            user: { ...user, isLoggedIn: true },
+            medications,
+            reminders,
+            isLoading: false 
+          });
+        } catch (error) {
+          console.error("Login failed:", error);
+          set({ 
+            error: "Login failed. Please check your credentials and try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      signup: async (email, password, userData) => {
+        set({ isLoading: true, error: null });
+        try {
+          await userAPI.signup(email, password, userData);
+          
+          // Auto login after signup
+          await get().login(email, password);
+        } catch (error) {
+          console.error("Signup failed:", error);
+          set({ 
+            error: "Signup failed. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
+      
+      logout: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          if (get().user.isLoggedIn) {
+            await userAPI.logout();
+          }
+          
+          // Reset to demo data
+          set({ 
+            user: { ...sampleUser, isLoggedIn: false },
+            medications: sampleMedications,
+            reminders: generateSampleReminders(sampleMedications),
+            isLoading: false 
+          });
+        } catch (error) {
+          console.error("Logout failed:", error);
+          set({ 
+            error: "Logout failed. Please try again.", 
+            isLoading: false 
+          });
+        }
+      },
     }),
     {
       name: 'medication-store',
