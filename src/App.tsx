@@ -12,6 +12,7 @@ import CaregiverSettings from "./pages/CaregiverSettings";
 import Login from "./pages/Login";
 import Chatbot from "./pages/Chatbot";
 import NotFound from "./pages/NotFound";
+import ChatbotCircle from "./components/chatbot/ChatbotCircle";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AnimatePresence>
+        <ChatbotCircle />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

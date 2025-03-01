@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Pill, 
@@ -9,12 +9,18 @@ import {
   User, 
   Menu, 
   X, 
-  Home 
+  Home,
+  UserCircle,
+  LogIn
 } from 'lucide-react';
+import { useStore } from '@/lib/store';
+import { Button } from '@/components/ui/button';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useStore();
   
   const links = [
     { path: '/', label: 'Dashboard', icon: <Home size={20} /> },
@@ -24,6 +30,14 @@ const Header: React.FC = () => {
   ];
   
   const isActive = (path: string) => location.pathname === path;
+
+  const handleAuthClick = () => {
+    if (user.isLoggedIn) {
+      logout();
+    } else {
+      navigate('/login');
+    }
+  };
   
   return (
     <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-med-gray-200">
@@ -68,8 +82,29 @@ const Header: React.FC = () => {
             ))}
           </nav>
           
+          {/* Login/Signup Button */}
+          <div className="flex items-center">
+            <Button 
+              onClick={handleAuthClick}
+              variant="ghost" 
+              className="flex items-center gap-2 ml-4 text-med-gray-700 hover:text-med-blue-600"
+            >
+              {user.isLoggedIn ? (
+                <>
+                  <UserCircle size={20} />
+                  <span className="hidden sm:inline">Logout</span>
+                </>
+              ) : (
+                <>
+                  <LogIn size={20} />
+                  <span className="hidden sm:inline">Login / Signup</span>
+                </>
+              )}
+            </Button>
+          </div>
+          
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden ml-2">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-med-gray-500 hover:text-med-blue-600 hover:bg-med-gray-100 focus:outline-none focus:ring-2 focus:ring-med-blue-300"
@@ -105,6 +140,20 @@ const Header: React.FC = () => {
                 {link.label}
               </Link>
             ))}
+            
+            {/* Login/Signup for mobile */}
+            <div 
+              className="flex items-center px-3 py-2 rounded-md text-base font-medium text-med-gray-700 hover:text-med-blue-600 hover:bg-med-gray-50 cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                handleAuthClick();
+              }}
+            >
+              <span className="mr-3">
+                {user.isLoggedIn ? <UserCircle size={20} /> : <LogIn size={20} />}
+              </span>
+              {user.isLoggedIn ? 'Logout' : 'Login / Signup'}
+            </div>
           </div>
         </motion.div>
       )}
