@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Check, Calendar as CalendarIcon } from 'lucide-react';
 import { Medication } from '@/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -130,6 +129,9 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({
             <DialogTitle className="text-xl font-semibold">
               {medicationToEdit ? 'Edit Medication' : 'Add New Medication'}
             </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Fill in the details below to {medicationToEdit ? 'update' : 'add'} a medication to your list.
+            </DialogDescription>
           </DialogHeader>
         </div>
         
@@ -309,7 +311,6 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({
                   </div>
                 </div>
                 
-                {/* Add some padding at the bottom to ensure content isn't hidden behind the fixed footer */}
                 <div className="h-4"></div>
               </form>
             </div>
