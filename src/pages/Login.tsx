@@ -50,6 +50,7 @@ const Login = () => {
     
     try {
       await signup(signupEmail, signupPassword, {
+        email: signupEmail, // Add this line to fix the type error
         name,
         phone,
         preferredPharmacy,
