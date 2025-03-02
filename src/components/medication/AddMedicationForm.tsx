@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Check, Calendar as CalendarIcon } from 'lucide-react';
@@ -10,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -123,204 +123,207 @@ const AddMedicationForm: React.FC<AddMedicationFormProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             {medicationToEdit ? 'Edit Medication' : 'Add New Medication'}
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Medication Name</Label>
-            <Input
-              id="name"
-              placeholder="Enter medication name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="dosage">Dosage</Label>
-            <Input
-              id="dosage"
-              placeholder="Enter dosage (e.g., 10mg)"
-              value={dosage}
-              onChange={(e) => setDosage(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Frequency</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {frequencyOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setFrequency(option.value)}
-                  className={`px-3 py-2 text-sm font-medium rounded-md transition-all
-                    ${frequency === option.value
-                      ? 'bg-med-blue-500 text-white'
-                      : 'bg-med-gray-100 text-med-gray-700 hover:bg-med-gray-200'
-                    }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Time of Day</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {timeOfDayOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => toggleTimeOfDay(option.value)}
-                  className={`px-3 py-2 text-sm font-medium rounded-md transition-all flex justify-between items-center
-                    ${timeOfDay.includes(option.value)
-                      ? 'bg-med-blue-500 text-white'
-                      : 'bg-med-gray-100 text-med-gray-700 hover:bg-med-gray-200'
-                    }`}
-                >
-                  {option.label}
-                  {timeOfDay.includes(option.value) && (
-                    <Check size={16} className="ml-1" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
+        <ScrollArea className="h-[70vh] pr-4">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(date) => date && setStartDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="name">Medication Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter medication name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
             
             <div className="space-y-2">
-              <Label>End Date (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={endDate as Date}
-                    onSelect={setEndDate}
-                    initialFocus
-                    disabled={(date) => date < startDate}
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="dosage">Dosage</Label>
+              <Input
+                id="dosage"
+                placeholder="Enter dosage (e.g., 10mg)"
+                value={dosage}
+                onChange={(e) => setDosage(e.target.value)}
+                required
+              />
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Medication Color</Label>
-            <div className="flex space-x-2">
-              {colorOptions.map((colorOption) => (
-                <button
-                  key={colorOption}
-                  type="button"
-                  onClick={() => setColor(colorOption)}
-                  className={`w-8 h-8 rounded-full transition-all ${
-                    color === colorOption ? 'ring-2 ring-offset-2 ring-med-blue-500' : ''
-                  }`}
-                  style={{ backgroundColor: colorOption }}
-                  aria-label={`Select color ${colorOption}`}
+            
+            <div className="space-y-2">
+              <Label>Frequency</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {frequencyOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFrequency(option.value)}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-all
+                      ${frequency === option.value
+                        ? 'bg-med-blue-500 text-white'
+                        : 'bg-med-gray-100 text-med-gray-700 hover:bg-med-gray-200'
+                      }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Time of Day</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {timeOfDayOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => toggleTimeOfDay(option.value)}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-all flex justify-between items-center
+                      ${timeOfDay.includes(option.value)
+                        ? 'bg-med-blue-500 text-white'
+                        : 'bg-med-gray-100 text-med-gray-700 hover:bg-med-gray-200'
+                      }`}
+                  >
+                    {option.label}
+                    {timeOfDay.includes(option.value) && (
+                      <Check size={16} className="ml-1" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={(date) => date && setStartDate(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>End Date (Optional)</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={endDate as Date}
+                      onSelect={setEndDate}
+                      initialFocus
+                      disabled={(date) => date < startDate}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Medication Color</Label>
+              <div className="flex space-x-2">
+                {colorOptions.map((colorOption) => (
+                  <button
+                    key={colorOption}
+                    type="button"
+                    onClick={() => setColor(colorOption)}
+                    className={`w-8 h-8 rounded-full transition-all ${
+                      color === colorOption ? 'ring-2 ring-offset-2 ring-med-blue-500' : ''
+                    }`}
+                    style={{ backgroundColor: colorOption }}
+                    aria-label={`Select color ${colorOption}`}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="instructions">Instructions (Optional)</Label>
+              <Textarea
+                id="instructions"
+                placeholder="Special instructions for taking this medication"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="resize-none"
+                rows={2}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="prescriber">Prescriber (Optional)</Label>
+                <Input
+                  id="prescriber"
+                  placeholder="Doctor's name"
+                  value={prescriber}
+                  onChange={(e) => setPrescriber(e.target.value)}
                 />
-              ))}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="pharmacy">Pharmacy (Optional)</Label>
+                <Input
+                  id="pharmacy"
+                  placeholder="Pharmacy name"
+                  value={pharmacy}
+                  onChange={(e) => setPharmacy(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="instructions">Instructions (Optional)</Label>
-            <Textarea
-              id="instructions"
-              placeholder="Special instructions for taking this medication"
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              className="resize-none"
-              rows={2}
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="prescriber">Prescriber (Optional)</Label>
-              <Input
-                id="prescriber"
-                placeholder="Doctor's name"
-                value={prescriber}
-                onChange={(e) => setPrescriber(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="pharmacy">Pharmacy (Optional)</Label>
-              <Input
-                id="pharmacy"
-                placeholder="Pharmacy name"
-                value={pharmacy}
-                onChange={(e) => setPharmacy(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter className="pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={!isFormValid}
-              className="w-full sm:w-auto"
-            >
-              {medicationToEdit ? 'Update' : 'Add'} Medication
-            </Button>
-          </DialogFooter>
-        </form>
+          </form>
+        </ScrollArea>
+        
+        <DialogFooter className="pt-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            onClick={handleSubmit} 
+            disabled={!isFormValid}
+            className="w-full sm:w-auto"
+          >
+            {medicationToEdit ? 'Update' : 'Add'} Medication
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

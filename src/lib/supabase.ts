@@ -12,12 +12,36 @@ const isMockMode = supabaseUrl.includes('your-project') || supabaseKey.includes(
 export const supabase = isMockMode 
   ? {
       from: () => ({
-        select: () => ({ data: [], error: null }),
-        insert: () => ({ data: [], error: null }),
-        update: () => ({ data: [], error: null }),
-        delete: () => ({ data: null, error: null }),
-        eq: () => ({ data: [], error: null }),
-        single: () => ({ data: {}, error: null }),
+        select: () => ({
+          data: [],
+          error: null,
+          eq: () => ({
+            data: [],
+            error: null,
+            select: () => ({ data: [], error: null }),
+            single: () => ({ data: {}, error: null }),
+          }),
+          single: () => ({ data: {}, error: null }),
+        }),
+        insert: () => ({
+          data: [],
+          error: null,
+          select: () => ({ data: [{ id: 'mock-id' }], error: null }),
+        }),
+        update: () => ({
+          data: [],
+          error: null,
+          eq: () => ({
+            data: [],
+            error: null,
+            select: () => ({ data: [{ id: 'mock-id' }], error: null }),
+          }),
+        }),
+        delete: () => ({
+          data: null,
+          error: null,
+          eq: () => ({ data: null, error: null }),
+        }),
       }),
       auth: {
         getUser: () => Promise.resolve({ data: { user: null }, error: null }),
