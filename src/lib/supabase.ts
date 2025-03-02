@@ -2,15 +2,37 @@
 import { createClient } from '@supabase/supabase-js';
 import { Medication, Reminder, Caregiver, User } from '@/types';
 
-// Initialize Supabase client
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+// Initialize Supabase client with fallback for development
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Create a mock client when credentials are placeholders
+const isMockMode = supabaseUrl.includes('your-project') || supabaseKey.includes('your-anon-key');
+
+export const supabase = isMockMode 
+  ? {
+      from: () => ({
+        select: () => ({ data: [], error: null }),
+        insert: () => ({ data: [], error: null }),
+        update: () => ({ data: [], error: null }),
+        delete: () => ({ data: null, error: null }),
+        eq: () => ({ data: [], error: null }),
+        single: () => ({ data: {}, error: null }),
+      }),
+      auth: {
+        getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+        signInWithPassword: () => Promise.resolve({ data: {}, error: null }),
+        signUp: () => Promise.resolve({ data: { user: { id: 'mock-id' } }, error: null }),
+        signOut: () => Promise.resolve({ error: null }),
+      },
+    }
+  : createClient(supabaseUrl, supabaseKey);
 
 // Medication API
 export const medicationAPI = {
   async getAll() {
+    if (isMockMode) return [];
+    
     const { data, error } = await supabase
       .from('medications')
       .select('*');
@@ -54,6 +76,8 @@ export const medicationAPI = {
 // Reminder API
 export const reminderAPI = {
   async getAll() {
+    if (isMockMode) return [];
+    
     const { data, error } = await supabase
       .from('reminders')
       .select('*');
@@ -88,6 +112,8 @@ export const reminderAPI = {
 // User and Caregiver API
 export const userAPI = {
   async getCurrentUser() {
+    if (isMockMode) return null;
+    
     // Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     
